@@ -186,7 +186,10 @@ class AutoSchema(ViewInspector):
                 )
                 continue
 
-            auths.append(scheme.get_security_requirement(self.view))
+            try:
+                auths.append(scheme.get_security_requirement(self.view))
+            except Exception:
+                pass
             component = ResolvedComponent(
                 name=scheme.name,
                 type=ResolvedComponent.SECURITY_SCHEMA,
