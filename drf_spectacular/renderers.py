@@ -12,12 +12,10 @@ class NoAliasOpenAPIRenderer(OpenAPIRenderer):
     """ Remove this temp fix once DRF 3.11 is no longer supported """
 
     def render(self, data, media_type=None, renderer_context=None):
-        logger.error(media_type)
         logger.error(data)
-        if hasattr(data, '__class___'):
-            logger.error(data.__class___)
-        if isinstance(data, ErrorDetail):
-            logger.error(data)
+        detail = data.get('detail')
+        if detail and isinstance(detail, ErrorDetail):
+            logger.error('mediatype {}: Failure {!r}'.format(media_type or 'Unknown', detail))
             return False
 
         # disable yaml advanced feature 'alias' for clean, portable, and readable output
