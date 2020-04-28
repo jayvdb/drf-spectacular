@@ -134,6 +134,7 @@ def build_root_object(paths, components):
         'paths': {**paths, **settings.APPEND_PATHS},
         'components': components
     }
+    warn(settings)
     if settings.DESCRIPTION:
         root['info']['description'] = settings.DESCRIPTION
     if settings.TOS:
@@ -147,6 +148,7 @@ def build_root_object(paths, components):
     if settings.SECURITY:
         root['security'] = settings.SECURITY
     if settings.TAGS:
+        warn(settings.TAGS)
         root['tags'] = settings.TAGS
     if settings.EXTERNAL_DOCS:
         root['externalDocs'] = settings.EXTERNAL_DOCS
