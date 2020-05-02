@@ -557,9 +557,9 @@ class AutoSchema(DRFAutoSchema):
         if serializer_extension:
             return serializer_extension.map_serializer(self, direction)
         else:
-            if hasattr(DRFAutoSchema, 'map_serializer'):
+            try:
                 result = super().map_serializer(serializer)
-            else:
+            except AttributeError:
                 result = super()._map_serializer(serializer)
 
             if not result:
@@ -582,6 +582,8 @@ class AutoSchema(DRFAutoSchema):
                     del result['required']
 
             return result
+
+    map_serializer = _map_serializer
 
     def _map_field_validators(self, field, schema):
         # DRF 3.10 'field' is the list of validators
