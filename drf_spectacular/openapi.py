@@ -397,10 +397,11 @@ class AutoSchema(DRFAutoSchema):
 
         # nested serializer with many=True gets automatically replaced with ListSerializer
         if isinstance(field, serializers.ListSerializer):
-            print(field)
+            print('list field', field)
             rv = self.resolve_serializer(field.child, direction=None)
-            print(rv)
-            return build_array_type(self.resolve_serializer(field.child, direction=None).ref)
+            print(rv.__dict__)
+            if rv and rv.name and rv.type and rv.object:
+                return build_array_type(self.resolve_serializer(field.child, direction=None).ref)
 
         # Related fields.
         if isinstance(field, serializers.ManyRelatedField):

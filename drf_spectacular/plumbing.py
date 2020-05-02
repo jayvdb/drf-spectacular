@@ -263,7 +263,9 @@ class ResolvedComponent:
 
     @property
     def ref(self) -> dict:
-        assert self.name and self.type and self.object
+        assert self.name
+        assert self.type
+        assert self.object
         return {'$ref': f'#/components/{self.type}/{self.name}'}
 
 
