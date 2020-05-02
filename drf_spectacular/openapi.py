@@ -386,7 +386,9 @@ class AutoSchema(DRFAutoSchema):
 
         serializer_field_extension = OpenApiSerializerFieldExtension.get_match(field)
         if serializer_field_extension:
-            return serializer_field_extension.map_serializer_field(self)
+            rv = serializer_field_extension.map_serializer_field(self)
+            if rv:
+                return rv
 
         # TODO for now ignore direction while nesting. this would only be relevant
         #  for nested PATCH, which is likely a very uncommon edge case
