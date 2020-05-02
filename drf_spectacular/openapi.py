@@ -560,6 +560,9 @@ class AutoSchema(DRFAutoSchema):
             else:
                 result = super()._map_serializer(serializer)
 
+            if not result:
+                return {}
+
             if result and result.get('properties'):
                 # Move 'type' to top
                 new = {'type': 'object'}
