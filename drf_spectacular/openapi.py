@@ -401,9 +401,9 @@ class AutoSchema(DRFAutoSchema):
 
         # nested serializer with many=True gets automatically replaced with ListSerializer
         if isinstance(field, serializers.ListSerializer):
-            print('list field', field)
+            #print('list field', field)
             rv = self.resolve_serializer(field.child, direction=None)
-            print(rv.__dict__)
+            #print(rv.__dict__)
             if rv and rv.name and rv.type and rv.object:
                 return build_array_type(self.resolve_serializer(field.child, direction=None).ref)
 
@@ -541,7 +541,7 @@ class AutoSchema(DRFAutoSchema):
         # if isinstance(field, serializers.ModelField):
         #     return self._map_model_field(field.model_field)
 
-        warn(f'could not resolve serializer field {field}. defaulting to "string"')
+        #warn(f'could not resolve serializer field {field}. defaulting to "string"')
         return build_basic_type(OpenApiTypes.STR)
 
     def _map_min_max(self, field, content):
@@ -556,10 +556,11 @@ class AutoSchema(DRFAutoSchema):
 
         if serializer_extension:
             rv = serializer_extension.map_serializer(self, direction)
-            print('serializer_extension.map_serializer', serializer_extension.map_serializer, rv)
-            if not rv:
-                return {}
-        else:
+            #print('serializer_extension.map_serializer', serializer_extension.map_serializer, rv)
+            if rv:
+                return rv
+
+        if True:
             try:
                 result = super().map_serializer(serializer)
             except AttributeError:
