@@ -555,7 +555,10 @@ class AutoSchema(DRFAutoSchema):
         serializer_extension = OpenApiSerializerExtension.get_match(serializer)
 
         if serializer_extension:
-            return serializer_extension.map_serializer(self, direction)
+            rv = serializer_extension.map_serializer(self, direction)
+            print('serializer_extension.map_serializer', serializer_extension.map_serializer, rv)
+            if not rv:
+                return {}
         else:
             try:
                 result = super().map_serializer(serializer)
@@ -565,7 +568,7 @@ class AutoSchema(DRFAutoSchema):
             if not result:
                 return {}
 
-            if result and result.get('properties'):
+            if result.get('properties'):
                 # Move 'type' to top
                 new = {'type': 'object'}
                 new.update(result)
