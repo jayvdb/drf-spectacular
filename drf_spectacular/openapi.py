@@ -393,7 +393,9 @@ class AutoSchema(DRFAutoSchema):
 
         # nested serializer
         if isinstance(field, serializers.Serializer):
-            return self.resolve_serializer(field, direction=None).ref
+            rv = self.resolve_serializer(field, direction=None)
+            if rv and rv.name and rv.type and rv.object:
+                return rv.ref
 
         # nested serializer with many=True gets automatically replaced with ListSerializer
         if isinstance(field, serializers.ListSerializer):
