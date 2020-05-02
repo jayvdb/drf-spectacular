@@ -554,7 +554,7 @@ class AutoSchema(DRFAutoSchema):
             else:
                 result = super()._map_serializer(serializer)
 
-            if result.get('properties'):
+            if result and result.get('properties'):
                 # Move 'type' to top
                 new = {'type': 'object'}
                 new.update(result)
