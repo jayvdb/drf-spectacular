@@ -546,7 +546,7 @@ class AutoSchema(DRFAutoSchema):
         serializer = force_instance(serializer)
         serializer_extension = OpenApiSerializerExtension.get_match(serializer)
 
-        if serializer_extension and direction:
+        if serializer_extension:
             return serializer_extension.map_serializer(self, direction)
         else:
             if hasattr(DRFAutoSchema, 'map_serializer'):
@@ -888,7 +888,7 @@ class AutoSchema(DRFAutoSchema):
         #   3. concrete component without properties -> prob. transactional so discard
         #   4. explicit list component -> demultiplexed at usage location so discard
         if not schema or ('oneOf' not in schema and not schema.get('properties', {})):
-            print(serializer, schema)
+            #print(serializer, schema)
             warn(
                 f'could not resolve "{serializer}".'
             )
