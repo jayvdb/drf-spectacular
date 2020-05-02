@@ -881,13 +881,15 @@ class AutoSchema(DRFAutoSchema):
             return self.registry[component]  # return component with schema
 
         self.registry.register(component)
-        component.schema = self._map_serializer(serializer, direction)
+        schema = self._map_serializer(serializer, direction)
         # 4 cases:
         #   1. polymorphic container component -> use
         #   2. concrete component with properties -> use
         #   3. concrete component without properties -> prob. transactional so discard
         #   4. explicit list component -> demultiplexed at usage location so discard
-        if 'oneOf' not in component.schema and not component.schema.get('properties', {}):
+        if not schema or ('oneOf' not in schema and not schema.get('properties', {})):
             del self.registry[component]
             return ResolvedComponent(None, None)  # sentinel
+
+        component.schema = schema
         return component
