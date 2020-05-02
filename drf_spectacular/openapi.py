@@ -889,6 +889,9 @@ class AutoSchema(DRFAutoSchema):
         #   4. explicit list component -> demultiplexed at usage location so discard
         if not schema or ('oneOf' not in schema and not schema.get('properties', {})):
             print(serializer, schema)
+            warn(
+                f'could not resolve "{serializer}".'
+            )
             del self.registry[component]
             return ResolvedComponent(None, None)  # sentinel
 
