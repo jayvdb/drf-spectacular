@@ -404,8 +404,8 @@ class AutoSchema(DRFAutoSchema):
             #print('list field', field)
             rv = self.resolve_serializer(field.child, direction=None)
             #print(rv.__dict__)
-            if rv and rv.name and rv.type and rv.object:
-                return build_array_type(self.resolve_serializer(field.child, direction=None).ref)
+            #if rv and rv.name and rv.type and rv.object:
+            return build_array_type(self.resolve_serializer(field.child, direction=None).ref)
 
         # Related fields.
         if isinstance(field, serializers.ManyRelatedField):
@@ -906,9 +906,9 @@ class AutoSchema(DRFAutoSchema):
         #   4. explicit list component -> demultiplexed at usage location so discard
         if not schema or ('oneOf' not in schema and not schema.get('properties', {})):
             #print(serializer, schema)
-            warn(
-                f'could not resolve "{serializer}".'
-            )
+            #warn(
+            #    f'could not resolve "{serializer}".'
+            #)
             del self.registry[component]
             return ResolvedComponent(None, None)  # sentinel
 
