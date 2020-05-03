@@ -1,5 +1,6 @@
 os: linux
 language: python
+dist: bionic
 addons:
   apt:
     packages:
