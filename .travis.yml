@@ -1,5 +1,9 @@
 os: linux
 language: python
+addons:
+  apt:
+    packages:
+      - gdal-bin
 
 branches:
   only:
