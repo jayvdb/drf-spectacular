@@ -5,11 +5,6 @@ addons:
     packages:
       - gdal-bin
 
-branches:
-  only:
-    - master
-    - travis
-
 jobs:
   fast_finish: true
   include:
