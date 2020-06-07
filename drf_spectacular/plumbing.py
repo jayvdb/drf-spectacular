@@ -1,6 +1,7 @@
 import hashlib
 import inspect
 import json
+import logging
 import sys
 from abc import ABCMeta
 from collections import defaultdict, OrderedDict
@@ -30,6 +31,7 @@ except ImportError:
         pass
 
 T = TypeVar('T')
+logger = logging.getLogger(__name__)
 
 
 class UnableToProceedError(Exception):
@@ -448,6 +450,7 @@ class OpenApiGeneratorExtension(Generic[T], metaclass=ABCMeta):
     def _load_class(cls):
         try:
             cls.target_class = import_string(cls.target_class)
+            logger.info(f'imported {cls.target_class}')
         except ImportError:
             cls.target_class = None
 

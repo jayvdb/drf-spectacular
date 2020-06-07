@@ -1,11 +1,16 @@
 import inspect
+import logging
 import re
 import typing
 from operator import attrgetter
 
+import mock
+
 import uritemplate
+from django.contrib.auth.models import AnonymousUser
 from django.core import validators, exceptions as django_exceptions
 from django.db import models
+
 from rest_framework import permissions, renderers, serializers
 from rest_framework.fields import _UnvalidatedField, empty
 from rest_framework.generics import GenericAPIView
@@ -31,6 +36,8 @@ from drf_spectacular.plumbing import (
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.authentication import OpenApiAuthenticationExtension
+
+logger = logging.getLogger(__name__)
 
 
 class AutoSchema(ViewInspector):
@@ -256,8 +263,62 @@ class AutoSchema(ViewInspector):
         # remove path variables and empty tokens
         return [t for t in path if t and not t.startswith('{')]
 
+    @staticmethod
+    def _get_mock_request():
+        class qs(dict):
+            def getlist(self, *args, **kwargs):
+                return ['browser']
+
+        class FakeSession(dict):
+            def save(self):
+                pass
+
+        request = mock.Mock()
+        request.method = 'GET'
+        request.GET = {}
+        request.POST = {}
+        request.path = '/fake/'
+        request.query_params = qs()
+        request.LANGUAGE_CODE = 'en'
+        #request.user = mock.Mock()
+        #request.user.id = 0
+        #request.user.is_advertiser_account = False
+        #request.user.is_publisher_account = False
+        request.user = AnonymousUser()
+        setattr(request.user, 'is_advertiser_account', False)
+        setattr(request.user, 'is_publisher_account', False)
+
+        request.is_authenticated = True
+        # from django.contrib.sessions.backends.db import SessionStore  qsession
+        # request.session = SessionStore()
+        request.session = FakeSession()  # should be a real session obj
+        return request
+
     def _resolve_path_parameters(self, variables):
-        model = getattr(getattr(self.view, 'queryset', None), 'model', None)
+        if not variables:
+            return []
+        logger.debug('trying to resolve path parameters {}'.format(variables))
+        queryset = getattr(self.view, 'queryset', None)
+        if queryset is None and hasattr(self.view, 'get_queryset'):
+            self.view.request = self._get_mock_request()
+            logger.debug('invoking {}'.format(self.view.get_queryset))
+            try:
+                queryset = self.view.get_queryset()
+                pass
+            except AssertionError as e:
+                logger.exception('failure in {}: {!r}'.format(self.view, e))
+                pass
+            except TypeError as e:
+                # Typically filters: TypeError: 'Mock' object is not iterable
+                logger.exception('failure in {}: {!r}'.format(self.view, e))
+                pass
+            except Exception as e:
+                logger.exception('failure in {}: {!r}'.format(self.view, e))
+                raise
+
+        model = getattr(queryset, 'model', None)
+
+
         parameters = []
 
         for idx, variable in enumerate(variables):
@@ -269,7 +330,7 @@ class AutoSchema(ViewInspector):
 
             if resolved_parameter:
                 schema, required = resolved_parameter['schema'], resolved_parameter['required']
-            elif not model:
+            elif not model or isinstance(model, mock.Mock):
                 warn(
                     f'could not derive type of path parameter "{variable}" because '
                     f'{self.view.__class__} has no queryset. consider annotating the '
@@ -278,6 +339,8 @@ class AutoSchema(ViewInspector):
             else:
                 try:
                     model_field = model._meta.get_field(variable)
+                    if isinstance(model_field, mock.Mock):
+                        raise django_exceptions.FieldDoesNotExist
                     schema = self._map_model_field(model_field, direction=None)
                     # strip irrelevant meta data
                     irrelevant_field_meta = ['readOnly', 'writeOnly', 'nullable', 'default']
@@ -306,7 +369,11 @@ class AutoSchema(ViewInspector):
             return []
         parameters = []
         for filter_backend in self.view.filter_backends:
-            parameters += filter_backend().get_schema_operation_parameters(self.view)
+            try:
+                parameters += filter_backend().get_schema_operation_parameters(self.view)
+            except TypeError:
+                # Ignore issubclass failure
+                pass
         return parameters
 
     def _allows_filters(self):
@@ -335,6 +402,8 @@ class AutoSchema(ViewInspector):
         return paginator.get_schema_operation_parameters(view)
 
     def _map_model_field(self, model_field, direction):
+        #if not isinstance(model_field, models.Field):
+        #    print(model_field)
         assert isinstance(model_field, models.Field)
         # to get a fully initialized serializer field we use DRF's own init logic
         try:
@@ -711,12 +780,14 @@ class AutoSchema(ViewInspector):
 
     def _get_serializer(self):
         view = self.view
+        request = self._get_mock_request()
         try:
             if isinstance(view, GenericAPIView):
                 # try to circumvent queryset issues with calling get_serializer. if view has NOT
                 # overridden get_serializer, its safe to use get_serializer_class.
                 if view.__class__.get_serializer == GenericAPIView.get_serializer:
-                    return view.get_serializer_class()()
+                    cls = view.get_serializer_class()
+                    return cls(context={'request': request})
                 return view.get_serializer()
             elif isinstance(view, APIView):
                 # APIView does not implement the required interface, but be lenient and make
@@ -724,7 +795,8 @@ class AutoSchema(ViewInspector):
                 if callable(getattr(view, 'get_serializer', None)):
                     return view.get_serializer()
                 elif callable(getattr(view, 'get_serializer_class', None)):
-                    return view.get_serializer_class()()
+                    cls = view.get_serializer_class()
+                    return cls(context={'request': request})
                 elif hasattr(view, 'serializer_class'):
                     return view.serializer_class
                 else:
@@ -741,6 +813,8 @@ class AutoSchema(ViewInspector):
                 f'Is get_serializer_class() returning None or is get_queryset() not working without '
                 f'a request? Ignoring the view for now. (Exception: {exc})'
             )
+            #if view.__class__.__name__ == 'CheckoutView':
+            #    raise
 
     def _get_request_body(self):
         # only unsafe methods can have a body
