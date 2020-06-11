@@ -290,6 +290,8 @@ class AutoSchema(ViewInspector):
         request.user = AnonymousUser()
         setattr(request.user, 'is_advertiser_account', False)
         setattr(request.user, 'is_publisher_account', False)
+        setattr(request.user, 'is_admin_account', False)
+        setattr(request.user, 'myusers', None)
 
         request.is_authenticated = True
         # from django.contrib.sessions.backends.db import SessionStore  qsession
@@ -314,6 +316,9 @@ class AutoSchema(ViewInspector):
             except TypeError as e:
                 # Typically filters: TypeError: 'Mock' object is not iterable
                 logger.exception('failure in {}: {!r}'.format(self.view, e))
+                pass
+            except NotImplementedError as e:
+                logger.info('failure in {}: {!r}'.format(self.view, e))
                 pass
             except Exception as e:
                 logger.exception('failure in {}: {!r}'.format(self.view, e))
