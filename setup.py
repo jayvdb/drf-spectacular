@@ -20,6 +20,7 @@ with open('README.rst') as readme:
 
 with open('requirements/base.txt') as fh:
     requirements = [r for r in fh.read().split() if not r.startswith('#')]
+    requirements.append('mock')
 
 
 def get_version(package):
