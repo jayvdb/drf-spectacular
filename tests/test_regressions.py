@@ -346,16 +346,18 @@ def test_drf_format_suffix_parameter(no_warnings):
     generator = SchemaGenerator(patterns=urlpatterns)
     schema = generator.get_schema(request=None, public=True)
     validate_schema(schema)
+
     assert len(schema['paths'].keys()) == 7
     assert list(schema['paths'].keys()) == [
         '/pi',
         '/pi/',
+        '/pi{format}',
         '/pi/subpath',
         '/pi/subpath{format}',
         '/pick',
         '/pick{format}',
-        '/pi{format}',
     ]
+
     format_parameter = schema['paths']['/pi{format}']['get']['parameters'][0]
     assert format_parameter['name'] == 'format'
     assert format_parameter['required'] is True
