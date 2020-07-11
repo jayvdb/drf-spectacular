@@ -165,6 +165,11 @@ class AutoSchema(ViewInspector):
         # override/add @extend_schema parameters
         for key, parameter in override_parameters.items():
             parameters[key] = parameter
+
+        format_param = parameters.get(('format', 'path'))
+        if format_param and 'enum' not in format_param['schema']:
+            format_param['enum'] = self.map_formats()
+
         return sorted(parameters.values(), key=lambda p: p['name'])
 
     def get_description(self):
@@ -731,6 +736,15 @@ class AutoSchema(ViewInspector):
                 continue
             media_types.append(renderer.media_type)
         return media_types
+
+    def map_formats(self):
+        formats = set()
+        for renderer in self.view.renderer_classes:
+            # BrowsableAPIRenderer not relevant to OpenAPI spec
+            if renderer == renderers.BrowsableAPIRenderer:
+                continue
+            formats.add(renderer.format)
+        return list(formats)
 
     def _get_serializer(self):
         view = self.view
