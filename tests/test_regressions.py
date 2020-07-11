@@ -324,17 +324,44 @@ def test_drf_format_suffix_parameter(no_warnings):
     def pi(request, format=None):
         pass  # pragma: no cover
 
-    urlpatterns = [path('pi', pi)]
-    urlpatterns = format_suffix_patterns(urlpatterns, allowed=['json', 'html'])
+    @extend_schema(responses=OpenApiTypes.FLOAT)
+    @api_view(['GET'])
+    def subpath(request, format=None):
+        pass  # pragma: no cover
+
+    @extend_schema(responses=OpenApiTypes.FLOAT)
+    @api_view(['GET'])
+    def similar(request, format=None):
+        pass  # pragma: no cover
+
+    urlpatterns = [
+        path('pi', pi),
+        path('pi/', pi),
+        path('pi/subpath', subpath),
+        path('pick', similar),
+    ]
+    allowed = ['json', 'html']
+    urlpatterns = format_suffix_patterns(urlpatterns, allowed=allowed)
 
     generator = SchemaGenerator(patterns=urlpatterns)
     schema = generator.get_schema(request=None, public=True)
     validate_schema(schema)
-    assert len(schema['paths']) == 2
+    assert len(schema['paths'].keys()) == 7
+    assert list(schema['paths'].keys()) == [
+        '/pi',
+        '/pi/',
+        '/pi/subpath',
+        '/pi/subpath{format}',
+        '/pick',
+        '/pick{format}',
+        '/pi{format}',
+    ]
     format_parameter = schema['paths']['/pi{format}']['get']['parameters'][0]
     assert format_parameter['name'] == 'format'
     assert format_parameter['required'] is True
     assert format_parameter['in'] == 'path'
+    assert format_parameter['schema']['type'] == 'string'
+    assert format_parameter['schema']['enum'] == allowed
 
 
 def test_regex_path_parameter_discovery(no_warnings):

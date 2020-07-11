@@ -650,16 +650,21 @@ def resolve_regex_path_parameter(path_regex, variable):
     """
     for match in _PATH_PARAMETER_COMPONENT_RE.finditer(path_regex):
         converter, parameter = match.group('converter'), match.group('parameter')
+        enum_values = None
 
         if converter and converter.startswith('drf_format_suffix_'):
-            converter = 'drf_format_suffix'  # remove appended options
+            enum_values = converter[len('drf_format_suffix_'):].split('_')
+            converter = 'drf_format_suffix'
 
         if parameter == variable and converter in DJANGO_PATH_CONVERTER_MAPPING:
-            return build_parameter_type(
+            param = build_parameter_type(
                 name=parameter,
                 schema=build_basic_type(DJANGO_PATH_CONVERTER_MAPPING[converter]),
                 location=OpenApiParameter.PATH,
             )
+            if enum_values:
+                param['schema']['enum'] = enum_values
+            return param
 
     return None
 
